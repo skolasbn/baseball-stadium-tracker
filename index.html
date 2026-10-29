@@ -394,7 +394,7 @@ function render(csvText, note) {
         const photoKey = `${v.date}|${pk}`;
         const photos = PHOTOS[photoKey] || [];
         const photoCell = photos.length
-          ? `<td class="photos-cell"><button type="button" data-photos="${photoKey}">View photos${photos.length > 1 ? ` (${photos.length})` : ""}</button></td>`
+          ? `<td class="photos-cell"><button type="button" data-photos="${photoKey}">View photos</button></td>`
           : `<td class="photos-cell"></td>`;
         return `<tr data-park="${pk}"><td><time datetime="${v.date}">${fmtDate(v.date)}</time></td><td><button type="button">${esc(v.park.name)}</button></td><td>${esc(matchup(v))}</td><td>${esc(result(v))}</td>${photoCell}</tr>`;
       }).join("")
