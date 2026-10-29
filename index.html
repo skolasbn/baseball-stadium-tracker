@@ -319,7 +319,7 @@ function render(csvText, note) {
   }));
 
   selected = null;
-  select(log.length ? log[0].park : allParks[0]);
+  select(log.length ? log[log.length - 1].park : allParks[0]);
   scalePins();
 }
 
