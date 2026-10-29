@@ -101,6 +101,49 @@
   td button { all: unset; cursor: pointer; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
   td button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
+  td.photos-cell { white-space: nowrap; }
+  td.photos-cell button { all: unset; cursor: pointer; font-size: .9375rem; padding: .25rem .6rem; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); text-decoration: none; }
+  td.photos-cell button:hover { background: var(--land); }
+  td.photos-cell button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+  .modal[aria-hidden="true"] { display: none; }
+  .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1.25rem; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(26, 43, 76, .78); }
+  .modal-card {
+    position: relative;
+    background: var(--land);
+    border-top: 6px solid var(--red);
+    border-left: 2px solid var(--navy);
+    border-right: 2px solid var(--navy);
+    border-bottom: 2px solid var(--navy);
+    width: min(72rem, 100%);
+    max-height: calc(100vh - 2.5rem);
+    display: flex; flex-direction: column;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.25rem .4rem; }
+  .modal-header h3 { font: 400 1.5rem/1.1 var(--display); margin: 0; }
+  .modal-close { all: unset; cursor: pointer; font: 400 1.75rem/1 var(--display); color: var(--navy); padding: .1rem .55rem; border: 2px solid transparent; }
+  .modal-close:hover { border-color: var(--navy); }
+  .modal-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .modal-body { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; padding: .5rem 3.5rem 1rem; flex: 1 1 auto; }
+  .modal-body figure { margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 0; max-width: 100%; }
+  .modal-body img { max-width: 100%; max-height: calc(100vh - 10rem); display: block; background: var(--water); object-fit: contain; border: 2px solid var(--navy); }
+  .modal-body figcaption { margin-top: .5rem; color: var(--muted); font-size: .875rem; text-align: center; }
+  .modal-nav { all: unset; cursor: pointer; position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; display: inline-flex; align-items: center; justify-content: center; background: var(--paper); border: 2px solid var(--navy); color: var(--navy); font: 600 1.25rem/1 var(--body); }
+  .modal-nav:hover { background: var(--land); }
+  .modal-nav:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .modal-nav[disabled] { opacity: .3; cursor: default; }
+  .modal-nav.prev { left: .75rem; }
+  .modal-nav.next { right: .75rem; }
+  .modal-footer { padding: 0 1.25rem 1rem; color: var(--muted); font-size: .9375rem; text-align: center; }
+  @media (max-width: 599px) {
+    .modal { padding: .5rem; }
+    .modal-body { padding: .5rem 2.75rem 1rem; }
+    .modal-nav { width: 2rem; height: 2rem; }
+    .modal-nav.prev { left: .25rem; }
+    .modal-nav.next { right: .25rem; }
+  }
+
   @media (prefers-reduced-motion: reduce) { .tip { transition: none; } }
 </style>
 </head>
@@ -137,11 +180,32 @@
     <h2>Every game we’ve seen</h2>
     <div class="table-scroll">
       <table>
-        <thead><tr><th scope="col">Date</th><th scope="col">Ballpark</th><th scope="col">Game</th><th scope="col">Final</th></tr></thead>
+        <thead><tr><th scope="col">Date</th><th scope="col">Ballpark</th><th scope="col">Game</th><th scope="col">Final</th><th scope="col">Photos</th></tr></thead>
         <tbody id="logBody"></tbody>
       </table>
     </div>
   </section>
+</div>
+
+<div class="modal" id="photoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <header class="modal-header">
+      <h3 id="modalTitle"></h3>
+      <button type="button" class="modal-close" aria-label="Close photos" data-close>&times;</button>
+    </header>
+    <div class="modal-body">
+      <button type="button" class="modal-nav prev" aria-label="Previous photo" data-nav="-1">&larr;</button>
+      <figure>
+        <img id="modalImg" alt="">
+        <figcaption id="modalCaption"></figcaption>
+      </figure>
+      <button type="button" class="modal-nav next" aria-label="Next photo" data-nav="1">&rarr;</button>
+    </div>
+    <footer class="modal-footer">
+      <span id="modalCounter" aria-live="polite"></span>
+    </footer>
+  </div>
 </div>
 
 <script>
@@ -189,6 +253,19 @@ const PARKS = [
    choose the tab, choose "Comma-separated values"). If the sheet can't be reached,
    the backup games below are shown instead. */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOTZw_QlKtwdXdoudGaWx5MvolRMQQgPsdm05qQRROUcbedzDsJ_z53hEkOCjUWUfi44rMPnSU0wwF/pub?output=csv";
+
+/* Photos keyed by "<ISO date>|<normalized park name>" so a visit's photos only
+   show when that exact game is in the sheet. Files live in /images and are
+   matched by hand against each photo's EXIF date and GPS. */
+const PHOTOS = {
+  "2013-07-26|coorsfield":            ["DSC02296.JPG"],
+  "2014-06-18|fenwaypark":            ["DSC04920.JPG", "IMG_1135.JPG"],
+  "2015-07-27|oraclepark":            ["IMG_3193.JPG"],
+  "2016-05-06|ratefield":             ["IMG_4418.JPG"],
+  "2017-09-30|targetfield":           ["IMG_2556.JPG"],
+  "2018-08-10|comericapark":          ["IMG_4280.JPG", "IMG_4303.JPG"],
+  "2025-06-07|greatamericanballpark": ["IMG_7313.jpg"],
+};
 
 const VISITS_CSV = `date,ballpark,away_team,home_team,away_score,home_score
 2013_07_26,Coors Field,Milwaukee Brewers,Colorado Rockies,3,8
@@ -311,9 +388,24 @@ function render(csvText, note) {
   /* game log */
   const log = allParks.flatMap(p => p.visits.map(v => ({ ...v, park: p }))).sort((a, b) => b.date.localeCompare(a.date));
   body.innerHTML = log.length
-    ? log.map(v => `<tr data-park="${key(v.park.name)}"><td><time datetime="${v.date}">${fmtDate(v.date)}</time></td><td><button type="button">${esc(v.park.name)}</button></td><td>${esc(matchup(v))}</td><td>${esc(result(v))}</td></tr>`).join("")
-    : `<tr><td colspan="4">No games yet. Add a date and opponent to a row in the sheet to see it here.</td></tr>`;
-  if (log.length) body.querySelectorAll("tr").forEach((tr, i) => tr.addEventListener("click", () => {
+    ? log.map(v => {
+        const pk = key(v.park.name);
+        const photoKey = `${v.date}|${pk}`;
+        const photos = PHOTOS[photoKey] || [];
+        const photoCell = photos.length
+          ? `<td class="photos-cell"><button type="button" data-photos="${photoKey}">View photos${photos.length > 1 ? ` (${photos.length})` : ""}</button></td>`
+          : `<td class="photos-cell"></td>`;
+        return `<tr data-park="${pk}"><td><time datetime="${v.date}">${fmtDate(v.date)}</time></td><td><button type="button">${esc(v.park.name)}</button></td><td>${esc(matchup(v))}</td><td>${esc(result(v))}</td>${photoCell}</tr>`;
+      }).join("")
+    : `<tr><td colspan="5">No games yet. Add a date and opponent to a row in the sheet to see it here.</td></tr>`;
+  if (log.length) body.querySelectorAll("tr").forEach((tr, i) => tr.addEventListener("click", e => {
+    const photoBtn = e.target.closest("[data-photos]");
+    if (photoBtn) {
+      e.stopPropagation();
+      const v = log[i];
+      openPhotos(PHOTOS[photoBtn.dataset.photos] || [], `${v.park.name} — ${fmtDate(v.date)}`, photoBtn);
+      return;
+    }
     select(log[i].park);
     document.getElementById("mapWrap").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
   }));
@@ -387,6 +479,61 @@ function select(p) {
       : `<p class="empty">Not visited yet.</p>`);
   body.querySelectorAll("tr[data-park]").forEach(tr => tr.classList.toggle("current", tr.dataset.park === key(p.name)));
 }
+
+/* ---------- Photo modal ---------- */
+const modal = document.getElementById("photoModal");
+const modalImg = document.getElementById("modalImg");
+const modalCaption = document.getElementById("modalCaption");
+const modalCounter = document.getElementById("modalCounter");
+const modalTitle = document.getElementById("modalTitle");
+let modalPhotos = [], modalIdx = 0, modalTrigger = null;
+
+function openPhotos(photos, title, trigger) {
+  if (!photos.length) return;
+  modalPhotos = photos;
+  modalIdx = 0;
+  modalTitle.textContent = title;
+  modalTrigger = trigger;
+  modal.setAttribute("aria-hidden", "false");
+  document.querySelector(".page").inert = true;
+  document.body.style.overflow = "hidden";
+  renderPhoto();
+  modal.querySelector(".modal-close").focus();
+}
+function closePhotos() {
+  if (modal.getAttribute("aria-hidden") === "true") return;
+  modal.setAttribute("aria-hidden", "true");
+  document.querySelector(".page").inert = false;
+  document.body.style.overflow = "";
+  modalImg.removeAttribute("src");
+  if (modalTrigger) modalTrigger.focus();
+}
+function stepPhoto(d) {
+  const next = modalIdx + d;
+  if (next < 0 || next >= modalPhotos.length) return;
+  modalIdx = next;
+  renderPhoto();
+}
+function renderPhoto() {
+  const f = modalPhotos[modalIdx];
+  modalImg.src = `images/${f}`;
+  modalImg.alt = f;
+  modalCaption.textContent = f;
+  modalCounter.textContent = `${modalIdx + 1} of ${modalPhotos.length}`;
+  modal.querySelector(".modal-nav.prev").disabled = modalIdx === 0;
+  modal.querySelector(".modal-nav.next").disabled = modalIdx === modalPhotos.length - 1;
+}
+modal.addEventListener("click", e => {
+  if (e.target.hasAttribute("data-close")) { closePhotos(); return; }
+  const nav = e.target.closest("[data-nav]");
+  if (nav && !nav.disabled) stepPhoto(+nav.dataset.nav);
+});
+document.addEventListener("keydown", e => {
+  if (modal.getAttribute("aria-hidden") === "true") return;
+  if (e.key === "Escape") { e.preventDefault(); closePhotos(); }
+  else if (e.key === "ArrowLeft") stepPhoto(-1);
+  else if (e.key === "ArrowRight") stepPhoto(1);
+});
 
 /* ---------- Load: Google Sheet first, built-in games as a fallback ---------- */
 (async () => {
