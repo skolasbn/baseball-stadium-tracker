@@ -31,9 +31,9 @@
     color: var(--navy);
     font: 400 1.0625rem/1.6 var(--body);
   }
-  .page { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  .page { padding: 2.5rem 1.5rem 4rem; }
 
-  header { margin-bottom: 1.75rem; max-width: 46rem; }
+  header { margin-bottom: 1.75rem; }
   h1 {
     font: 400 clamp(2.25rem, 6vw, 4rem)/1.02 var(--display);
     margin: 0 0 .75rem;
@@ -412,7 +412,7 @@ function render(csvText, note) {
   }));
 
   selected = null;
-  select(log.length ? log[0].park : allParks[0]);
+  select(log.length ? log[log.length - 1].park : allParks[0]);
   scalePins();
 }
 
