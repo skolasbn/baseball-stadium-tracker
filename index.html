@@ -95,7 +95,24 @@
   th, td { text-align: left; padding: .65rem .75rem .65rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
   th { font-weight: 600; font-size: .9375rem; color: var(--muted); border-bottom: 2px solid var(--navy); }
   @media (min-width: 600px) { td:first-child { white-space: nowrap; } }
-  @media (max-width: 599px) { table { font-size: .9375rem; } }
+  @media (max-width: 599px) {
+    table { font-size: 1rem; }
+    thead { display: none; }
+    tbody, tbody tr, tbody td { display: block; }
+    tbody tr { padding: 1rem .5rem; border-bottom: 1px solid var(--rule); }
+    tbody tr:first-child { border-top: 2px solid var(--navy); }
+    tbody tr:last-child { border-bottom: 2px solid var(--navy); }
+    tbody tr:hover, tbody tr.current { background: var(--land); }
+    tbody tr:hover td, tbody tr.current td { background: transparent; }
+    tbody td { padding: 0; border: none; }
+    tbody td:first-child { font-size: .8125rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: .15rem; }
+    tbody td:nth-child(2) { font-size: 1.125rem; margin: 0 0 .4rem; }
+    tbody td:nth-child(2) button { text-decoration: none; font-weight: 600; }
+    tbody td:nth-child(3) { margin-top: .15rem; }
+    tbody td:nth-child(4) { color: var(--red); margin-top: .1rem; }
+    tbody td.photos-cell { margin-top: .75rem; }
+    .table-scroll { overflow-x: visible; }
+  }
   tbody tr { cursor: pointer; }
   tbody tr:hover td, tbody tr.current td { background: var(--land); }
   tbody tr:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
